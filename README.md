@@ -74,7 +74,7 @@ ai_VVV_NNN
     │   ├── frame.IIII.position.hdf5             # world-space positions (in asset coordinates)
     │   ├── frame.IIII.normal_cam.hdf5           # surface normals in camera-space (ignores bump mapping)
     │   ├── frame.IIII.normal_world.hdf5         # surface normals in world-space (ignores bump mapping)
-    │   ├── frame.IIII.normal_bump_cam.hdf5.     # surface normals in camera-space (takes bump mapping into account)
+    │   ├── frame.IIII.normal_bump_cam.hdf5      # surface normals in camera-space (takes bump mapping into account)
     │   ├── frame.IIII.normal_bump_world.hdf5    # surface normals in world-space (takes bump mapping into account)
     │   ├── frame.IIII.render_entity_id.hdf5     # fine-grained segmentation where each V-Ray node has a unique ID
     │   ├── frame.IIII.semantic.hdf5             # NYU40 semantic labels
@@ -126,9 +126,9 @@ Each camera trajectory is stored as a dense list of camera poses in `ai_VVV_NNN/
 
 `camera_keyframe_positions.hdf5` contains an Nx3 array of camera positions, where N is the number of frames in the trajectory, and each position is stored in [x,y,z] order. These positions are specified in asset coordinates.
 
-The camera intrinsics for our images (i.e., equirectangular pinhole camera, 60 degree horizontal field-of-view, square pixels) are defined globally in `ml-hypersim/evermotion_dataset/_vray_user_params.py`.
+### Camera intrinsics
 
-We recommend browsing through `ml-hypersim/code/python/tools/scene_generate_images_bounding_box.py` to better understand our camera pose conventions. In this file, we generate an image that has per-instance 3D bounding boxes overlaid on top of a previously rendered image. This process involves loading a previously rendered image, loading the appropriate camera pose for that image, forming the appropriate projection matrix, and projecting the world-space corners of each bounding box into the image.
+Each scene uses slightly different camera intrinsics for rendering. This behavior arises because some scenes use non-standard tilt-shift photography parameters in their scene definition files. In [`ml-hypersim/contrib/mikeroberts3000`](contrib/mikeroberts3000), we provide a modified perspective projection matrix for each scene that can be used as a drop-in replacement for the usual OpenGL perspective projection matrix, as well as example code for projecting world-space points into Hypersim images. We recommend browsing through this example code to better understand our camera pose conventions.
 
 ### 3D bounding boxes
 
@@ -140,7 +140,7 @@ We include a tight 9-DOF bounding box for each semantic instance in `ai_VVV_NNN/
 
 `metadata_semantic_instance_bounding_box_object_aligned_2d_positions.hdf5` contains an Nx3 array of bounding box center positions, where N is the number of semantic instances, and each position is stored in [x,y,z] order. These positions are specified in asset coordinates.
 
-We compute each bounding box's rotation matrix according to the following algorithm. We always set the positive z-axis of our rotation matrix to point up, i.e., to align with the world-space gravity vector. We then compute a 2D minimum-area bounding box in the world-space xy-plane. Once we have computed our minimum-area bounding box, we have 4 possible choices for the positive x-axis of our rotation matrix. To make this choice, we consider the vector from the bounding box's geometric center to the center-of-mass of the points used to compute the bounding box. We choose the direction (among our 4 possible choices) that most closely aligns with this vector as the positive x-axis of our rotation matrix. Finally, we set the positive y-axis to be our positive x-axis rotated by +90 degrees in the world space xy-plane (i.e., so our rotation matrix will have a determinant of 1). This algorithm encourages that similar objects with semantically similar orientations will be assigned rotation matrices that are similar (i.e., the difference of their rotation matrices will have a small matrix norm).
+We compute each bounding box's rotation matrix according to the following algorithm. We always set the positive z-axis of our rotation matrix to point up, i.e., to align with the world-space gravity vector. We then compute a 2D minimum-area bounding box in the world-space xy-plane. Once we have computed our minimum-area bounding box, we have 4 possible choices for the positive x-axis of our rotation matrix. To make this choice, we consider the vector from the bounding box's geometric center to the center-of-mass of the points used to compute the bounding box. We choose the direction (among our 4 possible choices) that most closely aligns with this vector as the positive x-axis of our rotation matrix. Finally, we set the positive y-axis to be our positive x-axis rotated by +90 degrees in the world-space xy-plane (i.e., so our rotation matrix will have a determinant of 1). This algorithm encourages that similar objects with semantically similar orientations will be assigned rotation matrices that are similar (i.e., the difference of their rotation matrices will have a small matrix norm).
 
 Our code can be used to compute other types of bounding boxes (e.g., axis-aligned in world-space, minimum-volume), but we don't include these other types of bounding boxes in our public release.
 
